@@ -1,0 +1,30 @@
+image: alpine:latest
+
+stages:
+  - build
+  - run
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_HOST: "tcp://localhost:2375"
+
+build:
+  image: docker.anders.fi/anders/ci-runner-images/ci-runner-docker:latest
+  services:
+    - docker:stable-dind
+  stage: build
+  script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    - IMAGE=pepubot ./build.sh
+  except:
+    variables:
+      - $PEPUBOT_RUN
+
+run:
+  image: docker.anders.fi/riski/pepubot/pepubot:latest
+  stage: run
+  script:
+    - python post_to_slack.py
+  only:
+    variables:
+      - $PEPUBOT_RUN
