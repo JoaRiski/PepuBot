@@ -2,6 +2,7 @@ import os
 import random
 import argparse
 import requests
+import base64
 
 from dotenv import load_dotenv
 
@@ -9,9 +10,20 @@ from dotenv import load_dotenv
 API_URL = "https://slack.com/api/chat.postMessage"
 
 
+def get_api_token():
+    token = os.getenv("PEPUBOT_SLACK_API_TOKEN")
+    if token:
+        return token
+    b64_token = os.getenv("PEPUBOT_SLACK_API_TOKEN_B64")
+    # GitLab masked variables don't suppoer == so we don't have padding...
+    b64_token = b64_token + "=" * (-len(b64_token) % 4)
+    token = base64.b64decode(b64_token).decode("utf-8").strip()
+    return token
+
+
 def send_message(channel, message, retries=3):
     data = {
-        "token": os.getenv("PEPUBOT_SLACK_API_TOKEN"),
+        "token": get_api_token(),
         "channel": channel,
         "text": message,
         "as_user": True,
